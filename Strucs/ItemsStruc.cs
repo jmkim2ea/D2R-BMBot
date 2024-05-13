@@ -446,26 +446,16 @@ public class ItemsStruc
 
                     if (itemdatastruc[0x0C] == 4)
                     {
-                        if (!IsPickingItem && !HasGotTheBadItemOnCursor && !IsIncludedInList(BadItemsOnCursorIDList, ItemPointerLocation))
+                        bool isBadItem = HasGotTheBadItemOnCursor && !IsIncludedInList(BadItemsOnCursorIDList, ItemPointerLocation);
+                        if (!IsPickingItem && (!isBadItem || ItemNAAME != "Horadric Cube"))
                         {
-                            if (ItemNAAME != "Horadric Cube")
-                            {
-                                Form1_0.method_1("Added bad item 'OnCursor':" + ItemNAAME, Color.OrangeRed);
-                                BadItemsOnCursorIDList.Add(ItemPointerLocation);
-                            }
+                            Form1_0.method_1("Added bad item 'OnCursor':" + ItemNAAME, Color.OrangeRed);
+                            BadItemsOnCursorIDList.Add(ItemPointerLocation);
                         }
-                        else if (HasGotTheBadItemOnCursor && !IsIncludedInList(BadItemsOnCursorIDList, ItemPointerLocation))
+                        else if (isBadItem && ItemNAAME != "Short Sword")
                         {
-                            if (ItemNAAME == "Short Sword")
-                            {
-                                Form1_0.method_1("Added bad item 'OnCursor':" + ItemNAAME, Color.OrangeRed);
-                                BadItemsOnCursorIDList.Add(ItemPointerLocation);
-                                continue;
-                            }
-
                             ItemOnCursor = true;
                             ItemOnCursorName = ItemNAAME;
-                            //Form1_0.method_1("cursor: " + ItemNAAME + " - at: " + itemx + "," + itemy, Color.BlueViolet);
 
                             if (DebuggingItems)
                             {
@@ -474,41 +464,48 @@ public class ItemsStruc
                         }
                     }
 
+
                     if (itemdatastruc[0x0C] == 0)
                     {
-                        if (dwOwnerId == Form1_0.PlayerScan_0.unitId && equiploc == 0)
+                        if (dwOwnerId == Form1_0.PlayerScan_0.unitId)
                         {
-                            ItemsInInventory++;
-
-                            //Form1_0.method_1("inv: " + ItemNAAME + " - at: " + itemx + "," + itemy, Color.Red);
-                            if (!IsPickingItem)
+                            if (equiploc == 0)
                             {
-                                Form1_0.PlayerScan_0.GetHPAndManaOnThisEquippedItem();
-                                Form1_0.InventoryStruc_0.SetInventoryItem();
-                                Form1_0.InventoryStruc_0.SetHUDItem();
+                                ItemsInInventory++;
+                                if (!IsPickingItem)
+                                {
+                                    Form1_0.PlayerScan_0.GetHPAndManaOnThisEquippedItem();
+                                    Form1_0.InventoryStruc_0.SetInventoryItem();
+                                    Form1_0.InventoryStruc_0.SetHUDItem();
+                                }
+                                if (DebuggingItems)
+                                {
+                                    AllItemsInInventory.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Inventory - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
+                                }
                             }
-
-                            if (DebuggingItems)
+                            else if (equiploc == 4)
                             {
-                                AllItemsInInventory.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Inventory - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
+                                Form1_0.StashStruc_0.AddStashItem(itemx, itemy, 1);
+                                if (DebuggingItems)
+                                {
+                                    AllItemsInStash.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Stash - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
+                                }
+                            }
+                            else if (equiploc == 3)
+                            {
+                                Form1_0.Cubing_0.AddCubeItem(itemx, itemy);
+                                if (DebuggingItems)
+                                {
+                                    AllItemsIncube.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Cube - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
+                                }
+                            }
+                            else
+                            {
+                                AllItemsOthers.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - Others - EquipLocation:" + equiploc + " - SelfOwner:" + (dwOwnerId == Form1_0.PlayerScan_0.unitId) + " - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
                             }
                         }
-
-                        else if (dwOwnerId == Form1_0.PlayerScan_0.unitId && equiploc == 4)
+                        else if (equiploc == 4)
                         {
-                            //here for items in stash
-                            //Form1_0.method_1("name: " + ItemNAAME + " - at: " + itemx + "," + itemy, Color.DarkGreen);
-                            Form1_0.StashStruc_0.AddStashItem(itemx, itemy, 1);
-
-                            if (DebuggingItems)
-                            {
-                                AllItemsInStash.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Stash - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
-                            }
-                        }
-                        else if (dwOwnerId != Form1_0.PlayerScan_0.unitId && equiploc == 4)
-                        {
-                            //here for items in shared stash
-                            //Form1_0.method_1("name: " + ItemNAAME + " - at: " + itemx + "," + itemy + " - " + dwOwnerId, Color.DarkGreen);
                             SetSharedStashOwner();
                             if (dwOwnerId_Shared1 != 0 && dwOwnerId_Shared2 != 0 && dwOwnerId_Shared3 != 0)
                             {
@@ -523,18 +520,7 @@ public class ItemsStruc
                                 if (dwOwnerId == dwOwnerId_Shared3 && DebuggingItems) AllItemsInSharedStash3.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Shared Stash3 - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
                             }
                         }
-                        else if (dwOwnerId == Form1_0.PlayerScan_0.unitId && equiploc == 3)
-                        {
-                            //here for items in cube
-                            //Form1_0.method_1("name: " + ItemNAAME + " - at: " + itemx + "," + itemy, Color.DarkGreen);
-                            Form1_0.Cubing_0.AddCubeItem(itemx, itemy);
-
-                            if (DebuggingItems)
-                            {
-                                AllItemsIncube.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Cube - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
-                            }
-                        }
-                        else if (dwOwnerId != Form1_0.PlayerScan_0.unitId && equiploc <= 3)
+                        else if (equiploc <= 3)
                         {
                             //Shop Items
                             if (DebuggingItems)
@@ -542,54 +528,25 @@ public class ItemsStruc
                                 AllItemsInShop.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Shop - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
                             }
                         }
-                        /*else if (dwOwnerId != Form1_0.PlayerScan_0.unitId && equiploc == 0)
-                        {
-                            //Shop Gamble Items
-                            if (DebuggingItems)
-                            {
-                                AllItemsInShop.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - In Shop(Gamble) - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
-                            }
-                        }*/
-                        else
-                        {
-                            AllItemsOthers.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - Others - EquipLocation:" + equiploc + " - SelfOwner:" + (dwOwnerId == Form1_0.PlayerScan_0.unitId) + " - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
-                        }
                     }
+
                     if (itemdatastruc[0x0C] == 1)
                     {
                         if (dwOwnerId == Form1_0.PlayerScan_0.unitId && equiploc == 255)
                         {
-                            //Form1_0.method_1("inv: " + ItemNAAME + " - at: " + itemx + "," + itemy, Color.Red);
-
                             ItemsEquiped++;
                             if (!IsPickingItem)
                             {
                                 Form1_0.PlayerScan_0.GetHPAndManaOnThisEquippedItem();
                                 Form1_0.Repair_0.GetDurabilityOnThisEquippedItem();
                             }
-                            //Form1_0.method_1("name: " + ItemNAAME + " - at: " + itemx + "," + itemy + " - " + equiploc, Color.DarkGreen);
-
                             if (DebuggingItems)
                             {
                                 AllItemsEquipped.Add("ID:" + txtFileNo + "(" + ItemNAAME + ") at:" + itemx + ", " + itemy + " - Equipped - " + Form1_0.ItemsAlert_0.GetItemTypeText() + " && " + GetQualityTextString() + " && " + GetAllFlagsFromItem() + " && " + GetAllValuesFromStats() + GetItemsStashInfosTxt());
                             }
-
-                            /*if (ItemNAAME == "Crusader Gauntlets")
-                            {
-                                string SavePathh = Form1_0.ThisEndPath + "DumpItempUnitDataStruc";
-                                File.Create(SavePathh).Dispose();
-                                File.WriteAllBytes(SavePathh, pUnitData);
-                            }*/
-                        }
-                        else
-                        {
-                            /*if (dwOwnerId != 0 && Form1_0.MercStruc_0.MercOwnerID == 0)
-                            {
-                                //Form1_0.MercStruc_0.MercOwnerID = ItemID;
-                                Form1_0.method_1("owner: " + dwOwnerId.ToString("X") + ", ID: " + ItemID.ToString("X") + ", name: " + ItemNAAME + " - at: " + itemx + "," + itemy + " - " + equiploc, Color.DarkGreen);
-                            }*/
                         }
                     }
+
                     if (itemdatastruc[0x0C] == 2)
                     {
                         if (dwOwnerId == Form1_0.PlayerScan_0.unitId)
@@ -767,13 +724,13 @@ public class ItemsStruc
         return false;
     }
 
-    public bool GetSpecificItem(int ItemLocation, string ItemName, int PositionX, int PositionY, uint dwOwnerId, int Thisequiploc, bool InventoryItem = true)
+    public bool GetSpecificItem(int itemLocation, string itemName, int positionX, int positionY, uint dwOwnerId, int thisEquipLoc, bool inventoryItem = true)
     {
         try
         {
             if (!Form1_0.GameStruc_0.IsInGame()) return false;
 
-            //dead leave game
+            // Exit game if the player is dead or forced to leave
             if (Form1_0.PlayerScan_0.PlayerDead || Form1_0.Potions_0.ForceLeave)
             {
                 Form1_0.Potions_0.ForceLeave = true;
@@ -783,47 +740,23 @@ public class ItemsStruc
                 return false;
             }
 
+            // Scan for item pointers in memory
             Form1_0.PatternsScan_0.scanForUnitsPointer("item");
-            foreach (var ThisCurrentPointer in Form1_0.PatternsScan_0.AllItemsPointers)
+            foreach (var currentPointer in Form1_0.PatternsScan_0.AllItemsPointers)
             {
-                ItemPointerLocation = ThisCurrentPointer.Key;
+                ItemPointerLocation = currentPointer.Key;
                 if (ItemPointerLocation > 0)
                 {
                     itemdatastruc = new byte[144];
                     Form1_0.Mem_0.ReadRawMemory(ItemPointerLocation, ref itemdatastruc, 144);
 
-                    ItemsScanned++;
                     txtFileNo = BitConverter.ToUInt32(itemdatastruc, 4);
-                    uint ItemID = BitConverter.ToUInt32(itemdatastruc, 8);
                     ItemNAAME = Form1_0.ItemsNames_0.getItemBaseName(txtFileNo);
-                    GetUnitData();
-                    GetUnitPathData();
-                    GetStatsAddr();
 
-                    //Form1_0.method_1("ItemType: " + BitConverter.ToUInt32(itemdatastruc, 0).ToString() + ", TxtFileNo: " + BitConverter.ToUInt32(itemdatastruc, 4).ToString() + ", Name: " + ItemNAAME + ", Location: " + GetItemLocation(itemdatastruc[0x0C]));
-                    //; itemLoc - 0 in inventory, 1 equipped, 2 in belt, 3 on ground, 4 cursor, 5 dropping, 6 socketed
-                    if (itemdatastruc[0x0C] == ItemLocation)
+                    // Check if item matches desired properties
+                    if (itemdatastruc[0x0C] == itemLocation && CheckItemProperties(itemName, positionX, positionY, dwOwnerId, thisEquipLoc, inventoryItem))
                     {
-                        bool CanGo = true;
-                        if (itemdatastruc[0x0C] == 0)
-                        {
-                            if (dwOwnerId != 0 && dwOwnerId == Form1_0.PlayerScan_0.unitId && Thisequiploc == equiploc)
-                            {
-                                if (!InventoryItem) CanGo = false;
-                            }
-                        }
-
-                        if (InventoryItem && dwOwnerId != Form1_0.PlayerScan_0.unitId) CanGo = false;
-                        if (Thisequiploc != equiploc) CanGo = false;
-
-                        if (((ItemName != "" && ItemNAAME == ItemName) || ItemName == "") && CanGo)
-                        {
-                            if (itemx == PositionX && itemy == PositionY)
-                            {
-                                //Console.WriteLine(Form1_0.ItemsStruc_0.ItemNAAME);
-                                return true;
-                            }
-                        }
+                        return true;
                     }
                 }
             }
@@ -833,9 +766,19 @@ public class ItemsStruc
         catch
         {
             Form1_0.method_1("Couldn't 'GetSpecificItem()'", Color.OrangeRed);
+            return false;
         }
-        return false;
     }
+
+    private bool CheckItemProperties(string itemName, int positionX, int positionY, uint dwOwnerId, int thisEquipLoc, bool inventoryItem)
+    {
+        bool ownerMatch = (dwOwnerId == 0 || dwOwnerId == Form1_0.PlayerScan_0.unitId);
+        bool equipLocMatch = (thisEquipLoc == equiploc);
+        bool nameMatch = (string.IsNullOrEmpty(itemName) || ItemNAAME == itemName);
+
+        return ownerMatch && equipLocMatch && nameMatch && itemx == positionX && itemy == positionY && inventoryItem;
+    }
+
 
     public bool ShopBotGetPurchaseItems()
     {
