@@ -1007,16 +1007,16 @@ public class ItemsStruc
 
     public void GrabAllItemsForGold()
     {
-        if (!CharConfig.GrabForGold) return;
-
-        string LastGrabbedItem = "";
-        int TryGrabCount = 0;
-        int ItemsGrabbed = 0;
-
-        if (Form1_0.ItemsStruc_0.ItemsEquiped <= 2) return;
+        // Exit if the configuration does not allow grabbing items for gold
+        // or if there are less than three equipped items
+        if (!CharConfig.GrabForGold || Form1_0.ItemsStruc_0.ItemsEquiped <= 2) return;
 
         Form1_0.method_1("Grabbing all items for gold", Color.BlueViolet);
         Form1_0.WaitDelay(5);
+
+        string lastGrabbedItem = "";
+        int tryGrabCount = 0;
+        int itemsGrabbed = 0;
 
         while (true)
         {
@@ -1025,27 +1025,24 @@ public class ItemsStruc
             {
                 break;
             }
+
+            // Increment grab count or reset if a different item is grabbed
+            if (ItemNAAME == lastGrabbedItem)
+            {
+                if (++tryGrabCount > 5) break;  // Stop after 5 failed attempts
+            }
             else
             {
-                if (ItemNAAME == LastGrabbedItem)
+                lastGrabbedItem = ItemNAAME;
+                tryGrabCount = 0;
+                itemsGrabbed++;
+
+                // Stop based on teleport use and number of items grabbed
+                if ((!CharConfig.UseTeleport && itemsGrabbed > 2) ||
+                    (CharConfig.UseTeleport && itemsGrabbed > 7))
                 {
-                    TryGrabCount++;
-                    if (TryGrabCount > 5)
-                    {
-                        break;
-                    }
+                    break;
                 }
-                else
-                {
-                    TryGrabCount = 0;
-                    ItemsGrabbed++;
-                    if ((!CharConfig.UseTeleport && ItemsGrabbed > 2)
-                        || (CharConfig.UseTeleport && ItemsGrabbed > 7))
-                    {
-                        break;
-                    }
-                }
-                LastGrabbedItem = ItemNAAME;
             }
         }
     }
@@ -1055,59 +1052,19 @@ public class ItemsStruc
         try
         {
             Form1_0.PatternsScan_0.scanForUnitsPointer("item");
-
-            foreach (var ThisCurrentPointer in Form1_0.PatternsScan_0.AllItemsPointers)
+            foreach (var pointer in Form1_0.PatternsScan_0.AllItemsPointers)
             {
-                ItemPointerLocation = ThisCurrentPointer.Key;
-                if (ItemPointerLocation > 0)
+                long itemPointerLocation = pointer.Key;
+                if (itemPointerLocation > 0)
                 {
-                    itemdatastruc = new byte[144];
-                    Form1_0.Mem_0.ReadRawMemory(ItemPointerLocation, ref itemdatastruc, 144);
-                    ItemNAAME = Form1_0.ItemsNames_0.getItemBaseName(BitConverter.ToUInt32(itemdatastruc, 4));
-                    GetUnitData();
-                    GetUnitPathData();
-                    GetStatsAddr();
+                    byte[] itemData = new byte[144];
+                    Form1_0.Mem_0.ReadRawMemory(itemPointerLocation, ref itemData, 144);
+                    ItemNAAME = Form1_0.ItemsNames_0.getItemBaseName(BitConverter.ToUInt32(itemData, 4));
 
-                    //; on ground, dropping
-                    if (itemdatastruc[0x0C] == 3 || itemdatastruc[0x0C] == 5)
+                    // Continue only if item is on the ground or dropping
+                    if (itemData[0x0C] == 3 || itemData[0x0C] == 5)
                     {
-                        Form1_0.UIScan_0.readUI();
-                        if (!Form1_0.UIScan_0.leftMenu && !Form1_0.UIScan_0.rightMenu && !Form1_0.UIScan_0.fullMenu)
-                        {
-                            Position itemScreenPos = Form1_0.GameStruc_0.World2Screen(Form1_0.PlayerScan_0.xPosFinal, Form1_0.PlayerScan_0.yPosFinal, itemx, itemy);
-                            if (ShouldPickPos(itemScreenPos))
-                            {
-                                //####
-                                int DiffXPlayer = itemx - Form1_0.PlayerScan_0.xPosFinal;
-                                int DiffYPlayer = itemy - Form1_0.PlayerScan_0.yPosFinal;
-                                if (DiffXPlayer < 0) DiffXPlayer = -DiffXPlayer;
-                                if (DiffYPlayer < 0) DiffYPlayer = -DiffYPlayer;
-
-                                if (DiffXPlayer > 100 || DiffYPlayer > 100)
-                                {
-                                    continue;
-                                }
-
-                                if (DiffXPlayer > 4
-                                    || DiffYPlayer > 4)
-                                {
-                                    Form1_0.Mover_0.MoveToLocation(itemx, itemy);
-                                    Form1_0.PlayerScan_0.GetPositions();
-                                    GetUnitPathData();
-                                    itemScreenPos = Form1_0.GameStruc_0.World2Screen(Form1_0.PlayerScan_0.xPosFinal, Form1_0.PlayerScan_0.yPosFinal, itemx, itemy);
-                                }
-                                //####
-
-                                Form1_0.KeyMouse_0.MouseClicc_RealPos(itemScreenPos.X, itemScreenPos.Y);
-
-                                if (ItemNAAME != LastPick)
-                                {
-                                    LastPick = ItemNAAME;
-                                    Form1_0.method_1("Grabbed for gold: " + ItemNAAME, GetColorFromQuality((int)itemQuality));
-                                }
-                                return true;
-                            }
-                        }
+                        ProcessItemForGold(itemData);
                     }
                 }
             }
@@ -1115,10 +1072,41 @@ public class ItemsStruc
         catch
         {
             Form1_0.method_1("Couldn't 'GrabItemsForGold()'", Color.OrangeRed);
+            return false;
         }
 
         return false;
     }
+
+    private void ProcessItemForGold(byte[] itemData)
+    {
+        Form1_0.UIScan_0.readUI();
+        if (Form1_0.UIScan_0.leftMenu || Form1_0.UIScan_0.rightMenu || Form1_0.UIScan_0.fullMenu)
+            return;
+
+        Position itemScreenPos = Form1_0.GameStruc_0.World2Screen(Form1_0.PlayerScan_0.xPosFinal, Form1_0.PlayerScan_0.yPosFinal, itemx, itemy);
+        if (!ShouldPickPos(itemScreenPos))
+            return;
+
+        // Calculate distance to the item
+        int diffX = Math.Abs(itemx - Form1_0.PlayerScan_0.xPosFinal);
+        int diffY = Math.Abs(itemy - Form1_0.PlayerScan_0.yPosFinal);
+
+        if (diffX > 100 || diffY > 100)
+            return;
+
+        // Move closer if necessary
+        if (diffX > 4 || diffY > 4)
+        {
+            Form1_0.Mover_0.MoveToLocation(itemx, itemy);
+            Form1_0.PlayerScan_0.GetPositions();
+        }
+
+        // Click the item
+        Form1_0.KeyMouse_0.MouseClicc_RealPos(itemScreenPos.X, itemScreenPos.Y);
+        Form1_0.method_1("Grabbed for gold: " + ItemNAAME, GetColorFromQuality((int)itemQuality));
+    }
+
 
     public bool ShouldPickPos(Position itemScreenPos)
     {
